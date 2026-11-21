@@ -4,6 +4,7 @@ const Rules = preload("res://game/rules.gd")
 const Profile = preload("res://game/profile.gd")
 const CITY = preload("res://assets/bg_city_night.webp")
 const MARCH = preload("res://assets/bgm_dronobiy_march.mp3")
+const SKYWATCH_PAGE := "res://web/skywatch_ua_2022_2026.html"
 const GOLD := Color("#ffd783")
 const INK := Color("#eff4fa")
 const MUTED := Color("#a9b8ce")
@@ -79,7 +80,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			close_overlay()
 		elif screen == "game" and active_panel.is_empty():
 			show_pause()
-		elif screen == "menu" and active_panel == "guide":
+		elif screen == "menu" and active_panel in ["guide", "skywatch_error"]:
 			close_overlay()
 		get_viewport().set_input_as_handled()
 
@@ -226,10 +227,42 @@ func show_menu(focus_hero: String = "") -> void:
 	text(ui, "Швидка гра", Rect2(890, 500, 404, 32), 24)
 	button(ui, "Небесна варта   %s" % profile.records.air, Rect2(889, 545, 416, 51), start_quick.bind("air"))
 	button(ui, "Варта вулиць   %s" % profile.records.street, Rect2(889, 605, 416, 51), start_quick.bind("street"))
-	button(ui, "Довідник і керування", Rect2(889, 678, 416, 48), show_guide)
+	if OS.has_feature("pc"):
+		var skywatch := button(ui, "SKYWATCH: UA · у браузері", Rect2(889, 665, 416, 48), open_skywatch)
+		skywatch.tooltip_text = "Окрема браузерна кампанія з вісьмома главами"
+	button(ui, "Довідник і керування", Rect2(889, 725, 416, 48), show_guide)
 	if profile.postcard:
-		button(ui, "Листівка · Харків", Rect2(889, 742, 416, 48), show_postcard)
-	text(ui, "Клавіші  •  миша  •  дотик", Rect2(890, 812, 414, 27), 16, MUTED)
+		button(ui, "Листівка · Харків", Rect2(889, 783, 416, 45), show_postcard)
+	text(ui, "Клавіші  •  миша  •  дотик", Rect2(890, 830, 414, 24), 16, MUTED)
+
+func open_skywatch() -> void:
+	var source := FileAccess.open(SKYWATCH_PAGE, FileAccess.READ)
+	if source == null:
+		show_skywatch_error("Файл кампанії не знайдено.")
+		return
+
+	var browser_path := ProjectSettings.globalize_path(SKYWATCH_PAGE)
+	if not OS.has_feature("editor"):
+		var browser_copy := "user://skywatch_ua_2022_2026.html"
+		var destination := FileAccess.open(browser_copy, FileAccess.WRITE)
+		if destination == null:
+			show_skywatch_error("Не вдалося підготувати файл кампанії для браузера.")
+			return
+		var page := source.get_buffer(source.get_length())
+		destination.store_buffer(page)
+		var write_error := destination.get_error()
+		destination.close()
+		if write_error != OK:
+			show_skywatch_error("Не вдалося записати файл кампанії.")
+			return
+		browser_path = ProjectSettings.globalize_path(browser_copy)
+
+	if OS.shell_open(browser_path) != OK:
+		show_skywatch_error("Не вдалося відкрити кампанію в системному браузері.")
+
+func show_skywatch_error(message: String) -> void:
+	begin_overlay("skywatch_error", "SKYWATCH: UA", message)
+	button(overlay, "Закрити", Rect2(350, 500, 676, 51), close_overlay, true).grab_focus()
 
 func main_campaign_action() -> void:
 	if profile.checkpoint.is_empty():
