@@ -1,0 +1,19 @@
+config_version=5
+
+[application]
+config/name="Дронобій Захист"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[display]
+window/size/viewport_width=1376
+window/size/viewport_height=920
+window/size/window_width_override=1150
+window/size/window_height_override=768
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.03, 0.05, 0.09, 1)
